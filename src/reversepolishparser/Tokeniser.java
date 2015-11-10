@@ -46,17 +46,17 @@ class Tokeniser implements Iterable<Token> {
     Tokeniser(String lines, String delim) {
         this.thing = new Scanner(lines)
                 .useDelimiter(Pattern.compile(delim + "|\n"));
-        this.position = 0;
+        this.position = 1;
     }
 
-   void tryParse() throws FMTException {
+    void tryParse() throws FMTException {
         while (thing.hasNext()) {
             String delimetedString = thing.next();
-            position += delimetedString.length();
             if (delimetedString.equalsIgnoreCase("")) {
                 continue;
             }
             tokens.add(Token.of(delimetedString, position));
+            position += delimetedString.length();
         }
     }
 
@@ -66,7 +66,7 @@ class Tokeniser implements Iterable<Token> {
     }
     Deque<Number> stack = new ArrayDeque<>();
 
-    void processTokens() throws FMTException{
+    void processTokens() throws FMTException {
         Token current;
         while ((current = tokens.poll()) != null) {
             switch (current.type) {
@@ -75,9 +75,10 @@ class Tokeniser implements Iterable<Token> {
                     break;
                 case OPERATOR:
                     try {
-                        operate((Character) current.contents);
-                    } catch (NoSuchElementException e) {
-                        throw new FMTException(current.pos, "operator");
+                        operate(current);
+                    } catch (NoSuchElementException | FMTException e) {
+                        throw new FMTException(current.pos, "operator "+current.toString()
+                        );
                     }
                     break;
                 default:
@@ -89,8 +90,8 @@ class Tokeniser implements Iterable<Token> {
         return op.apply(operands.left, operands.right).doubleValue();
     }
 
-    private void operate(Character op) throws NoSuchElementException {
-
+    private void operate(Token tok) throws NoSuchElementException, FMTException {
+        char op = ((Token.OperatorToken)tok).contents;
         Pair<Number> operands;
         switch (op) {
             case '*':
@@ -98,13 +99,16 @@ class Tokeniser implements Iterable<Token> {
             case '+':
             case '-':
             case '"':
+            case '^':
+            case 'l':
                 operands = new Pair<>(stack.pop(), stack.pop());
                 break;
+            case '#':
             case '~':
                 operands = new Pair<>(stack.pop(), 0);
                 break;
             default:
-                return;
+                throw new FMTException(tok.pos, op+"");
         }
         BinaryOperator<Double> bi = (l, r) -> 0.0;
         switch (op) {
@@ -112,6 +116,15 @@ class Tokeniser implements Iterable<Token> {
                 stack.push(operands.left);
                 stack.push(operands.right);
                 return;
+            case 'l':
+                bi = (l,r) -> Math.log(r) / Math.log(l);
+                break;
+            case '^':
+                bi = (l, r) -> Math.pow(r, l);
+                break;
+            case '#':
+                bi = (l, r) -> Math.sqrt(l);
+                break;
             case '*':
                 bi = (l, r) -> l * r;
                 break;
@@ -190,16 +203,16 @@ class Tokeniser implements Iterable<Token> {
 
         static Token of(String content, int pos) throws FMTException {
             try {
-                if (Character.isLetterOrDigit(content.charAt(0))) {
+                if (Character.isDigit(content.charAt(0))) {
                     return new NumberToken(Double.parseDouble(content), pos);
                 }
                 if (content.length() == 1) {
                     return new OperatorToken(content.charAt(0), pos);
                 }
             } catch (Exception e) {
-                throw new FMTException(pos, "\nError parsing: +\"" + e.getMessage()+"\"");
+                throw new FMTException(pos, "\nError parsing: +\"" + e.getMessage() + "\"");
             }
-            throw new FMTException(pos, "\nError parsing: \"" + content+"\"");
+            throw new FMTException(pos, "\nError parsing: \"" + content + "\"");
         }
         private final int pos;
 
@@ -211,15 +224,15 @@ class Tokeniser implements Iterable<Token> {
         static class NumberToken extends Token<Number> {
 
             public NumberToken(Number content, int pos) {
-                super(content, TokenType.LITERAL,pos);
+                super(content, TokenType.LITERAL, pos);
             }
 
         }
 
         static class OperatorToken extends Token<Character> {
 
-            public OperatorToken(Character content,int pos) {
-                super(content, TokenType.OPERATOR,pos);
+            public OperatorToken(Character content, int pos) {
+                super(content, TokenType.OPERATOR, pos);
             }
 
         }
@@ -235,7 +248,7 @@ class Tokeniser implements Iterable<Token> {
 
         @Override
         public String toString() {
-            return "[" + contents + "]~" + type;
+            return "[" + contents + "]";
         }
 
     }

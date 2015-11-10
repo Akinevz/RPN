@@ -7,7 +7,6 @@ package reversepolishparser;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Optional;
 import java.util.Scanner;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
@@ -31,34 +30,36 @@ public class ReversePolishParser {
     }
 
     static void help() {
-        System.out.println("\nEnter file name, to parse file.\n"
-                + "`Return` key to enter the equation by hand.\n"
+        System.out.println("\nInput normally to parse.\n"
+                + "`Return` key to read from a file.\n"
                 + "Type `--` to exit.");
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) {
         running = true;
         help();
         while (running) {
             try {
-
-                String decision = askForInput("", new String[]{}).trim();
                 String input;
-                switch (decision.trim()) {
+                String decision = askForInput("", new String[]{}).trim();
+                switch (decision) {
                     case "help":
                     case "?":
                         help();
                         continue;
                     case "--":
+                    case "quit":
+                    case "q":
                         running = false;
                         return;
                     case "":
-                        input = askForInput("Enter a valid RPN:");
+                        input = readFile(askForInput("Enter name for file containing RPN:"));
                         break;
                     default:
-                        input = readFile(decision);
+                        input = decision;
                         break;
                 }
+
                 System.out.println("Input: [" + input + "]");
                 Tokeniser processor
                         = new Tokeniser(input, " ");
@@ -67,8 +68,8 @@ public class ReversePolishParser {
                 System.out.println("Output: " + processor);
                 System.out.println("\n-------------Again?--------------\n");
             } catch (FileNotFoundException | Tokeniser.FMTException e) {
-                System.out.println("\n\tERROR: \""+e.getMessage()+"\"");
-                System.out.println("Please enter again.\n");
+                System.out.println("\n\tERROR: \"" + e.getMessage() + "\"");
+                System.out.println("Error parsing.\n");
             }
         }
     }
