@@ -10,6 +10,8 @@ import java.io.FileNotFoundException;
 import java.util.Scanner;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
+import com.akinevz.utils.Chance;
+import com.akinevz.utils.Logic;
 
 /**
  *
@@ -20,14 +22,7 @@ public class ReversePolishParser {
     static String[] comments = {"#", "//", "?"};
     private static boolean running;
 
-    static String readFile(String filename) throws FileNotFoundException { // Leave as stream
-        Scanner scan = new Scanner(new File(filename)).useDelimiter("\n");
-        return StreamSupport.stream(((Iterable<String>) () -> scan).spliterator(), false)
-                .filter(s -> !s.equalsIgnoreCase(""))
-                .filter(stripComments())
-                .collect(StringBuilder::new, (sb, str) -> sb.append(str).append('\n'), StringBuilder::append)
-                .reverse().deleteCharAt(0).reverse().toString().trim();
-    }
+   
 
     static void help() {
         System.out.println("\nInput normally to parse.\n"
@@ -35,7 +30,7 @@ public class ReversePolishParser {
                 + "Type `--` to exit.");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
         running = true;
         help();
         while (running) {
@@ -53,7 +48,7 @@ public class ReversePolishParser {
                         running = false;
                         return;
                     case "":
-                        input = readFile(askForInput("Enter name for file containing RPN:"));
+                        input = com.akinevz.utils.EasyFile.read(new File(query("Enter name for file containing RPN:")));
                         break;
                     default:
                         input = decision;
@@ -67,42 +62,30 @@ public class ReversePolishParser {
                 processor.processTokens();
                 System.out.println("Output: " + processor);
                 System.out.println("\n-------------Again?--------------\n");
-            } catch (FileNotFoundException | Tokeniser.FMTException e) {
+            } catch (Tokeniser.FMTException e) {
                 System.out.println("\n\tERROR: \"" + e.getMessage() + "\"");
-                System.out.println("Error parsing.\n");
+                help();
             }
         }
     }
 
-    private static boolean matchAny(String[] target, Predicate<? super String> match) {
-        for (String par : target) {
-            if (match.test(par)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     private static Predicate<? super String> stripComments() {
-        return ((Predicate<? super String>) (line -> matchAny(comments, (s) -> line.startsWith(s)))).negate();
+        return ((Predicate<String>) (line -> Logic.matchAny(line::startsWith, comments))).negate();
     }
 
-    public static boolean matchEither(String tar, String[] matches) {
-        return matchAny(matches, (s) -> tar.equalsIgnoreCase(s));
-    }
 
     public static String askForInput(String question, String[] invalid) {
         Scanner user = new Scanner(System.in);
-        String[] wrong = invalid;
         String input;
         do {
             System.out.println("\t" + question);
             input = user.nextLine();
-        } while (matchEither(input, wrong));
+        } while (Logic.matchEither(input, invalid));
         return input;
     }
 
-    public static String askForInput(String question) {
+    public static String query(String question) {
         return askForInput(question, new String[]{"", null});
     }
 
