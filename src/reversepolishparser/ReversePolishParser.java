@@ -5,12 +5,9 @@
  */
 package reversepolishparser;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 import java.util.function.Predicate;
-import java.util.stream.StreamSupport;
-import com.akinevz.utils.Chance;
 import com.akinevz.utils.Logic;
 
 /**
@@ -22,11 +19,9 @@ public class ReversePolishParser {
     static String[] comments = {"#", "//", "?"};
     private static boolean running;
 
-   
-
     static void help() {
-        System.out.println("\nInput normally to parse.\n"
-                + "`Return` key to read from a file.\n"
+        System.out.println("Input normally to parse.\n"
+                //                + "`Return` key to read from a file.\n"
                 + "Type `--` to exit.");
     }
 
@@ -44,12 +39,13 @@ public class ReversePolishParser {
                         continue;
                     case "--":
                     case "quit":
+                    case "exit":
                     case "q":
                         running = false;
                         return;
-                    case "":
-                        input = com.akinevz.utils.EasyFile.read(new File(query("Enter name for file containing RPN:")));
-                        break;
+//                    case "":
+//                        input = com.akinevz.utils.EasyFile.read(new File(query("Enter name for file containing RPN:")));
+//                        break;
                     default:
                         input = decision;
                         break;
@@ -63,17 +59,15 @@ public class ReversePolishParser {
                 System.out.println("Output: " + processor);
                 System.out.println("\n-------------Again?--------------\n");
             } catch (Tokeniser.FMTException e) {
-                System.out.println("\n\tERROR: \"" + e.getMessage() + "\"");
+                System.out.println("\n\tERROR: \"" + e.getMessage() + "\"\n");
                 help();
             }
         }
     }
 
-
     private static Predicate<? super String> stripComments() {
         return ((Predicate<String>) (line -> Logic.matchAny(line::startsWith, comments))).negate();
     }
-
 
     public static String askForInput(String question, String[] invalid) {
         Scanner user = new Scanner(System.in);
