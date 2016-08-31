@@ -18,7 +18,7 @@ abstract class Token<T> {
             if (Throwing.passes(() -> new Double(content))) {
                 return new NumberToken(Double.parseDouble(content), pos);
             }
-            if (content.matches("[()=;{}\\[\\]+\\-*/&!%^|<>']*")) {
+            if (content.matches("[\"#()=;{}\\[\\]+\\-*/&!%^|<>']*")) {
                 return new OperatorToken(content, pos);
             }
         } catch (Exception e) {
